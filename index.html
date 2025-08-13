@@ -1,0 +1,23 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My Blogging Site</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+    <button id="newBlogBtn">New Blog</button>
+    <div id="blogForm" style="display: none;">
+        <input type="text" id="blogTitle" placeholder="Blog Title" />
+        <textarea id="blogDesc" placeholder="Blog Description"></textarea>
+        <input type="file" id="blogImgInput" accept="image/*" />
+        <img id="previewImg" src="" style="display:none;width:150px;" />
+        <button id="submitBlog">Submit</button>
+    </div>
+    <section id="blogList"></section>
+
+    <script src="script.js"></script>
+</body>
+</html>
