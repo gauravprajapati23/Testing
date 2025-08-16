@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Login - Fixed Vertical Firebase Auth</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <style>
+    html, body { height: 100%; }
+    body {
+      min-height: 100vh; height: 100vh; margin: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: #eaf6fb;
+      font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    }
+    .centerbox {
+      width: 96vw; max-width: 400px;
+      padding: 36px 22px;
+      border-radius: 16px;
+      background: #fff;
+      box-shadow: 0 6px 32px rgba(0,0,0,0.07);
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 18px;
+    }
+    form {
+      display: flex;
+      flex-direction: column; /* This keeps vertical stack! */
+      gap: 0;
+      width: 100%;
+    }
+    .input {
+      padding: 14px 12px;
+      width: 100%;
+      font-size: 17px;
+      border: 1px solid #bbb;
+      border-radius: 8px;
+      outline: none;
+      background: #f8fafb;
+      box-sizing: border-box;
+      margin-bottom: 11px;
+      margin-top: 0;
+      font-family: inherit;
+      transition: border-color .18s;
+    }
+    .input:focus { border-color: #263cff; }
+    .show-pwd {
+      color: #1a77f2;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 15px;
+      margin-bottom: 18px;
+      margin-top: -8px;
+      padding: 0;
+      text-align: left;
+      font-family: inherit;
+    }
+    .orange-btn {
+      background: #ff3c00;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 20px;
+      font-weight: 500;
+      padding: 13px 0;
+      margin-bottom: 15px;
+      margin-top: 3px;
+      width: 100%;
+      cursor: pointer;
+      transition: background .15s;
+    }
+    .orange-btn:active, .orange-btn:focus { background: #e63600; }
+    .orange-btn:disabled {
+      background: #ffa184;
+      cursor: not-allowed;
+      opacity: .8;
+    }
+    .msg { padding: 8px; border-radius: 6px; font-size: 15px; margin: 6px 0; }
+    .error { background: #ffecec; color: #d20000; border-left: 6px solid #ffbaba; }
+    .success { background: #f0fff3; color: #219651; border-left: 6px solid #67daa0; }
+    .tiny-link {
+      color: #6526b3;
+      text-decoration: underline;
+      background: none;
+      border: none;
+      padding: 0;
+      font-weight: 400;
+      font-size: 16px;
+      cursor: pointer;
+      font-family: inherit;
+      margin-top: 3px; margin-bottom: 1px;
+      text-align: left;
+      display: inline;
+    }
+    .link-row {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      margin-bottom: 8px;
+      margin-top: -7px;
+      gap: 18px;
+    }
+    .switch-area {
+      margin: 12px 0 0 0;
+      font-size: 16px;
+      text-align: left;
+    }
+    @media (max-width:450px) {
+      .centerbox { padding: 18px 7vw; }
+      .orange-btn { font-size: 18px; padding: 12px 0; }
+      .switch-area { font-size: 15px; }
+      .input { font-size: 16px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="centerbox" id="auth_card">
+    <div id="msg_box"></div>
+    <form id="auth_form" autocomplete="on">
+      <input type="email" class="input" id="email_input" placeholder="Email" required autocomplete="username">
+      <input type="password" class="input" id="password_input" placeholder="Password" required autocomplete="current-password">
+      <button type="button" class="show-pwd" id="toggle_pwd">Show Password</button>
+      <button type="submit" class="orange-btn" id="submit_btn">Login</button>
+      <button type="button" class="tiny-link" id="forgot_btn">Forgot Password?</button>
+    </form>
+    <form id="reset_form" style="display:none;">
+      <input type="email" class="input" id="reset_email_input" placeholder="Email" required>
+      <button type="submit" class="orange-btn" style="margin-top:8px;">Send Reset Link</button>
+      <button type="button" class="tiny-link" id="back_btn">Back</button>
+    </form>
+    <div class="switch-area">
+      Don't have an account?
+      <button class="tiny-link" id="switch_btn">Sign Up / Create account</button>
+    </div>
+  </div>
+  <div class="centerbox" id="main" style="display:none;">
+    <div style="font-size:20px; color:#234; margin-bottom:18px;" id="main_welcome"></div>
+    <button id="signout_btn" class="orange-btn">Sign Out</button>
+    <div style="margin-top:20px; font-style: italic; text-align:center;">
+      Main section goes here after user log in 👨🏻‍💻
+    </div>
+  </div>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyDlWE7SCusLlD_QlKj6ZiFXMLVRv2p_bQI",
+    authDomain: "matrix0923gb.firebaseapp.com",
+    databaseURL: "https://matrix0923gb-default-rtdb.firebaseio.com",
+    projectId: "matrix0923gb",
+    storageBucket: "matrix0923gb.appspot.com",
+    messagingSenderId: "422971115501",
+    appId: "1:422971115501:web:bee253507f96180c24c9e4",
+    measurementId: "G-9FLE14XSEB"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+
+  // DOM
+  const authCard = document.getElementById('auth_card');
+  const authForm = document.getElementById('auth_form');
+  const resetForm = document.getElementById('reset_form');
+  const msgBox = document.getElementById('msg_box');
+  const emailInput = document.getElementById('email_input');
+  const passwordInput = document.getElementById('password_input');
+  const togglePwd = document.getElementById('toggle_pwd');
+  const submitBtn = document.getElementById('submit_btn');
+  const forgotBtn = document.getElementById('forgot_btn');
+  const switchBtn = document.getElementById('switch_btn');
+  const resetEmailInput = document.getElementById('reset_email_input');
+  const backBtn = document.getElementById('back_btn');
+  const mainSection = document.getElementById('main');
+  const mainWelcome = document.getElementById('main_welcome');
+  const signoutBtn = document.getElementById('signout_btn');
+
+  let isLogin = true; // true = login, false = signup
+
+  function showMsg(text, type) {
+    msgBox.innerHTML = `<div class="msg ${type}">${text}</div>`;
+  }
+  function clearMsg() { msgBox.innerHTML = ""; }
+
+  // Show/hide password
+  togglePwd.onclick = function() {
+    if (passwordInput.type === "password") {
+      passwordInput.type = "text";
+      togglePwd.textContent = "Hide Password";
+    } else {
+      passwordInput.type = "password";
+      togglePwd.textContent = "Show Password";
+    }
+    passwordInput.focus();
+  };
+
+  // Switch login/signup
+  switchBtn.onclick = function() {
+    isLogin = !isLogin;
+    submitBtn.textContent = isLogin ? "Login" : "Sign Up";
+    switchBtn.textContent = isLogin 
+      ? "Sign Up / Create account" 
+      : "Login to existing account";
+    submitBtn.disabled = false;
+    clearMsg();
+    authForm.style.display = 'flex';
+    resetForm.style.display = 'none';
+    passwordInput.value = '';
+    emailInput.value = '';
+    passwordInput.type = 'password';
+    togglePwd.textContent = "Show Password";
+  };
+
+  // Forgot password flow
+  forgotBtn.onclick = function() {
+    authForm.style.display = 'none';
+    resetForm.style.display = 'flex';
+    resetEmailInput.value = '';
+    clearMsg();
+  };
+
+  backBtn.onclick = function() {
+    resetForm.style.display = 'none';
+    authForm.style.display = 'flex';
+    clearMsg();
+  };
+
+  // Handle login/signup
+  authForm.onsubmit = async function(e) {
+    e.preventDefault();
+    submitBtn.disabled = true;
+    clearMsg();
+    const email = emailInput.value.trim();
+    const pwd = passwordInput.value;
+    try {
+      if (isLogin) {
+        await auth.signInWithEmailAndPassword(email, pwd);
+      } else {
+        await auth.createUserWithEmailAndPassword(email, pwd);
+      }
+    } catch (err) {
+      showMsg((err?.message||"Error").replace("Firebase:", ""), "error");
+      submitBtn.disabled = false;
+    }
+  };
+
+  // Handle reset
+  resetForm.onsubmit = async function(e) {
+    e.preventDefault();
+    clearMsg();
+    try {
+      await auth.sendPasswordResetEmail(resetEmailInput.value.trim());
+      showMsg("Reset email sent. Check your inbox.", "success");
+      setTimeout(() => backBtn.click(), 1500);
+    } catch (err) {
+      showMsg((err?.message||"Error").replace("Firebase:", ""), "error");
+    }
+  };
+
+  // Handle sign out
+  signoutBtn.onclick = async function() {
+    await auth.signOut();
+  };
+
+  // Auth state observer
+  auth.onAuthStateChanged(function(user) {
+    if (user) {
+      authCard.style.display = 'none';
+      mainSection.style.display = 'flex';
+      mainWelcome.innerHTML = `Welcome, <strong>${user.email || 'User'}</strong>`;
+    } else {
+      authCard.style.display = 'flex';
+      mainSection.style.display = 'none';
+      passwordInput.value = '';
+      emailInput.value = '';
+      passwordInput.type = 'password';
+      togglePwd.textContent = "Show Password";
+      clearMsg();
+    }
+    submitBtn.disabled = false;
+  });
+
+</script>
+</body>
+</html>
